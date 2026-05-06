@@ -1,936 +1,916 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ========== الأيقونات ==========
-const Icons = {
-  Home: ({s=20}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Broadcast: ({s=20}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>,
-  Settings: ({s=20}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
-  Shield: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  Image: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-  Type: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>,
-  Users: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  Chat: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-  Edit: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-  Grip: ({s=12}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>,
-  X: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  Check: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-  Mic: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>,
-  MicOff: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .76-.13 1.49-.37 2.17"/><line x1="12" y1="19" x2="12" y2="22"/></svg>,
-  Plus: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  Trash: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-  Record: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>,
-  Download: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-  Link: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
-  Remote: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M8 12h8"/><path d="M6 16h12"/></svg>,
-  Chart: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-  Template: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>,
-  Transition: ({s=16}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
-  Wifi: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
-  Copy: ({s=14}: {s?:number}) => <svg xmlns="http://www.w3.org/2000/svg" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const I = {
+  Broadcast: ({s=20}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>,
+  Settings: ({s=20}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Monitor: ({s=20}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  Mic: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>,
+  MicOff: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .76-.13 1.49-.37 2.17"/><line x1="12" y1="19" x2="12" y2="22"/></svg>,
+  Camera: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  CameraOff: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14"/><path d="M9.5 4H15l2 3h3.3"/><path d="M23 7v12"/></svg>,
+  Record: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>,
+  Stop: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor"/></svg>,
+  Download: ({s=16}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Image: ({s=16}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  Type: ({s=16}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>,
+  Shield: ({s=16}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Chat: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  Chart: ({s=18}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  X: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Trash: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  Plus: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Wifi: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
+  WifiOff: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
+  Eye: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  EyeOff: ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
 };
 
-// ========== نوافذ تحكم عائمة ==========
-interface FloatingPanelProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  defaultPos: { x: number; y: number };
-  minimized: boolean;
-  onToggle: () => void;
-  onClose?: () => void;
-  width?: number;
-  zIndex?: number;
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface AppSettings {
+  platform: 'cloudflare' | 'livekit' | 'mux' | 'custom';
+  whipEndpoint: string;
+  bearerToken: string;
+  chatPlatform: 'youtube' | 'twitch' | 'none';
+  youtubeVideoId: string;
+  twitchChannel: string;
+  videoBitrate: number;
+  resolution: '480p' | '720p' | '1080p';
 }
 
-const FloatingPanel = ({ title, icon, children, defaultPos, minimized, onToggle, onClose, width = 280, zIndex = 40 }: FloatingPanelProps) => {
-  const [pos, setPos] = useState(defaultPos);
-  const [dragging, setDragging] = useState(false);
-  const dragStart = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+interface RtcStats {
+  videoBitrate: number;
+  audioBitrate: number;
+  fps: number;
+  packetLoss: number;
+  rtt: number;
+  width: number;
+  height: number;
+}
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    setDragging(true);
-    dragStart.current = { sx: e.clientX, sy: e.clientY, ox: pos.x, oy: pos.y };
+interface TextOverlay {
+  id: number;
+  text: string;
+  x: number;
+  y: number;
+  color: string;
+  size: number;
+}
+
+interface HideRegion {
+  id: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  mode: 'smart' | 'blur' | 'black';
+}
+
+const PLATFORM_LABELS: Record<AppSettings['platform'], string> = {
+  cloudflare: 'Cloudflare Stream',
+  livekit: 'LiveKit',
+  mux: 'Mux',
+  custom: 'Custom WHIP',
+};
+
+const PLATFORM_HINTS: Record<AppSettings['platform'], string> = {
+  cloudflare: 'https://customer-XXXX.cloudflarestream.com/STREAM_KEY/webRTC/publish',
+  livekit: 'https://YOUR_PROJECT.livekit.cloud/rtc/whip?access_token=TOKEN',
+  mux: 'https://global-live.mux.com:443/app/STREAM_KEY/broadcast',
+  custom: 'https://your-whip-server/publish',
+};
+
+const DEFAULT_SETTINGS: AppSettings = {
+  platform: 'cloudflare',
+  whipEndpoint: '',
+  bearerToken: '',
+  chatPlatform: 'none',
+  youtubeVideoId: '',
+  twitchChannel: '',
+  videoBitrate: 2500,
+  resolution: '720p',
+};
+
+function loadSettings(): AppSettings {
+  try {
+    const s = localStorage.getItem('ss_settings');
+    return s ? { ...DEFAULT_SETTINGS, ...JSON.parse(s) } : DEFAULT_SETTINGS;
+  } catch { return DEFAULT_SETTINGS; }
+}
+
+function fmt(s: number) {
+  return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// ─── Settings Modal ───────────────────────────────────────────────────────────
+function SettingsModal({ onClose }: { onClose: () => void }) {
+  const [s, setS] = useState<AppSettings>(loadSettings);
+  const [tab, setTab] = useState<'stream' | 'chat' | 'video'>('stream');
+  const [showToken, setShowToken] = useState(false);
+
+  const save = () => {
+    localStorage.setItem('ss_settings', JSON.stringify(s));
+    onClose();
   };
 
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (!dragging || !dragStart.current) return;
-      setPos({
-        x: Math.max(0, Math.min(window.innerWidth - width, dragStart.current.ox + e.clientX - dragStart.current.sx)),
-        y: Math.max(0, Math.min(window.innerHeight - 80, dragStart.current.oy + e.clientY - dragStart.current.sy)),
-      });
-    };
-    const onUp = () => { setDragging(false); dragStart.current = null; };
-    if (dragging) {
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-    }
-    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
-  }, [dragging, width]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      style={{ left: pos.x, top: pos.y, width, zIndex } as React.CSSProperties}
-      className="absolute bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 rounded-xl shadow-2xl shadow-black/50 overflow-hidden select-none"
-    >
-      <div
-        onPointerDown={onPointerDown}
-        className={`flex items-center justify-between px-3 py-2 ${dragging ? 'bg-cyan-500/20' : 'bg-gray-800/60'} border-b border-gray-700 cursor-grab active:cursor-grabbing`}
-      >
-        <span className="text-cyan-400 text-xs font-bold flex items-center gap-1.5">{icon} {title}</span>
-        <div className="flex gap-0.5">
-          <button onClick={onToggle} className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700 transition"><Icons.Grip /></button>
-          {onClose && <button onClick={onClose} className="text-gray-400 hover:text-red-400 p-1 rounded hover:bg-gray-700 transition"><Icons.X /></button>}
-        </div>
-      </div>
-      <AnimatePresence>
-        {!minimized && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="p-3 space-y-3">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
-// ========== شاشة تسجيل الدخول ==========
-const AuthScreen = ({ onLogin }: { onLogin: () => void }) => (
-  <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 p-6 text-white">
-    <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full max-w-sm bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-2xl text-center space-y-6">
-      <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-        <Icons.Broadcast s={32} />
-      </div>
-      <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-fuchsia-500">StreamSphere Pro</h1>
-        <p className="text-gray-400 text-sm mt-2">بث احترافي • تسجيل • تحكم عن بعد • تحليلات</p>
-      </div>
-      <button
-        onClick={onLogin}
-        className="w-full bg-gradient-to-r from-cyan-600 to-fuchsia-600 py-3.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-fuchsia-500/20"
-      >
-        دخول سريع
-      </button>
-    </motion.div>
-  </div>
-);
-
-// ========== لوحة التحكم الرئيسية ==========
-interface StreamConfig {
-  platforms: Record<string, boolean>;
-  title: string;
-  category: string;
-  template: string;
-}
-
-const Dashboard = ({ onStart }: { onStart: (c: StreamConfig) => void }) => {
-  const [platforms, setPlatforms] = useState({ fb: true, yt: true, x: false, ig: false });
-  const [title, setTitle] = useState('بث مباشر 🔥');
-  const [category, setCategory] = useState('sports');
-  const [template, setTemplate] = useState('none');
-  const toggle = (p: string) => setPlatforms(prev => ({ ...prev, [p]: !prev[p as keyof typeof prev] }));
-  const active = Object.values(platforms).filter(Boolean).length;
-
-  const templates = [
-    { id: 'none', name: 'بدون قالب', icon: '🎬' },
-    { id: 'match', name: 'مباراة رياضية', icon: '⚽' },
-    { id: 'gaming', name: 'لعبة فيديو', icon: '🎮' },
-    { id: 'lesson', name: 'درس تعليمي', icon: '📚' },
-    { id: 'interview', name: 'مقابلة', icon: '🎤' },
-  ];
-
-  return (
-    <div className="p-4 pb-24 space-y-5">
-      <div className="text-center space-y-1 pt-4">
-        <h2 className="text-2xl font-bold text-white">مركز البث المتقدم</h2>
-        <p className="text-gray-400 text-sm">لوحة تحكم حصرية للمشاهد لا يراها</p>
-      </div>
-
-      <div>
-        <label className="text-gray-300 text-sm font-medium mb-2 flex items-center gap-1"><Icons.Template s={14} /> قالب البث</label>
-        <div className="grid grid-cols-3 gap-2">
-          {templates.map(t => (
-            <button key={t.id} onClick={() => setTemplate(t.id)}
-              className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all ${template === t.id ? 'bg-cyan-600/20 border-2 border-cyan-500 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-750'}`}>
-              <span className="text-xl">{t.icon}</span>
-              <span className="text-[10px] font-bold">{t.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="text-gray-300 text-sm font-medium mb-2 block">المنصات المستهدفة</label>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { id: 'fb', name: 'فيسبوك', color: 'bg-blue-600' },
-            { id: 'yt', name: 'يوتيوب', color: 'bg-red-600' },
-            { id: 'x', name: 'تويتر/X', color: 'bg-gray-800 border border-gray-600' },
-            { id: 'ig', name: 'إنستغرام', color: 'bg-gradient-to-tr from-purple-600 to-yellow-500' },
-          ].map(p => (
-            <button key={p.id} onClick={() => toggle(p.id)}
-              className={`p-3 rounded-xl flex flex-col items-center gap-1.5 transition-all ${platforms[p.id as keyof typeof platforms] ? `${p.color} text-white shadow-lg scale-105` : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>
-              <span className="text-lg">{p.id === 'fb' ? 'f' : p.id === 'yt' ? '▶' : p.id === 'x' ? '𝕏' : '📷'}</span>
-              <span className="text-[10px] font-bold">{p.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-gray-800 rounded-xl p-4 space-y-3 border border-gray-700">
-        <div>
-          <label className="text-gray-300 text-sm block mb-1">عنوان البث</label>
-          <input value={title} onChange={e => setTitle(e.target.value)}
-            className="w-full bg-gray-900 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-cyan-500 focus:outline-none text-sm" />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">الفئة</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}
-              className="w-full bg-gray-900 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-cyan-500 focus:outline-none text-sm">
-              <option value="sports">🏆 رياضة</option>
-              <option value="gaming">🎮 ألعاب</option>
-              <option value="education">📚 تعليم</option>
-              <option value="entertainment">🎭 ترفيه</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">الجودة</label>
-            <select className="w-full bg-gray-900 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-cyan-500 focus:outline-none text-sm">
-              <option>1080p / 60fps</option>
-              <option>720p / 30fps (توفير)</option>
-              <option>480p / 30fps (موبايل)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700 space-y-2">
-        <label className="text-gray-300 text-sm font-medium">الميزات المتاحة</label>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          {['🛡️ إخفاء ذكي', '🖼️ شعار/لوجو', '✏️ نصوص', '🎙️ فلاتر صوت', '📊 تحليلات', '💬 شات', '🎬 تسجيل', '🔗 WHIP/WHEP', '📱 تحكم عن بعد'].map(f => (
-            <div key={f} className="bg-gray-900/60 p-2 rounded-lg text-gray-300">{f}</div>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={() => onStart({ platforms, title, category, template })} disabled={active === 0}
-        className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-cyan-600 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/20 hover:shadow-fuchsia-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-        <Icons.Broadcast s={24} /> بدء البث على {active} منصات
-      </button>
+  const field = (label: string, node: React.ReactNode) => (
+    <div className="space-y-1">
+      <label className="text-xs text-gray-400 font-medium">{label}</label>
+      {node}
     </div>
   );
-};
 
-// ========== محرك البث الاحترافي ==========
-interface MaskRegion {
-  id: number; x: number; y: number; w: number; h: number;
-  type: 'clone' | 'blur' | 'solid'; offsetX: number; offsetY: number; blend: number; enabled: boolean;
-}
-interface LogoItem { id: number; src: string; img: HTMLImageElement; x: number; y: number; w: number; h: number; opacity: number; }
-interface TextItem { id: number; text: string; x: number; y: number; size: number; color: string; stroke: boolean; strokeColor: string; }
-interface LowerThird { enabled: boolean; text: string; subtext: string; color: string; bgColor: string; }
+  const inp = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <input {...props} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500 transition" />
+  );
 
-const ProStreamEngine = ({ config, onEnd }: { config: StreamConfig | null; onEnd: () => void }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hiddenVideoRef = useRef<HTMLVideoElement>(null);
-  const animFrameRef = useRef<number>(0);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const destRef = useRef<MediaStreamAudioDestinationNode | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const filterNodesRef = useRef<AudioNode[]>([]);
-  const startTimeRef = useRef(Date.now());
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState('00:00');
-  const [recordedFile, setRecordedFile] = useState<{ url: string; name: string; size: number } | null>(null);
-
-  const [whipEndpoint, setWhipEndpoint] = useState('');
-  const [whipStatus, setWhipStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
-  const [whipResourceId, setWhipResourceId] = useState('');
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-
-  const [remoteCode, setRemoteCode] = useState('');
-  const [remoteConnected, setRemoteConnected] = useState(false);
-  const [remoteCommands, setRemoteCommands] = useState<{ time: string; cmd: string }[]>([]);
-
-  const [analytics, setAnalytics] = useState({
-    viewers: 1247, peakViewers: 1580, avgWatchTime: '4:32', engagement: 78,
-    chatMessages: 342, reactions: 156, shares: 23,
-    history: Array.from({ length: 30 }, () => Math.floor(800 + Math.random() * 800)),
-  });
-
-  const [transition, setTransition] = useState({ active: false, type: 'fade', duration: 500 });
-  const transitionCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  const [masks, setMasks] = useState<MaskRegion[]>([{ id: 1, x: 15, y: 75, w: 70, h: 12, type: 'clone', offsetX: -20, offsetY: -8, blend: 0.8, enabled: true }]);
-  const [selectedMaskId, setSelectedMaskId] = useState(1);
-
-  const [logos, setLogos] = useState<LogoItem[]>([]);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const [textOverlays, setTextOverlays] = useState<TextItem[]>([]);
-  const [newText, setNewText] = useState('');
-  const [newTextSize, setNewTextSize] = useState(24);
-  const [newTextColor, setNewTextColor] = useState('#ffffff');
-  const [newTextStroke, setNewTextStroke] = useState(true);
-  const [newTextStrokeColor, setNewTextStrokeColor] = useState('#000000');
-
-  const [lowerThird, setLowerThird] = useState<LowerThird>({ enabled: false, text: '', subtext: '', color: '#06b6d4', bgColor: 'rgba(0,0,0,0.7)' });
-  const [audioPreset, setAudioPreset] = useState('clear');
-  const [isMuted, setIsMuted] = useState(false);
-  const [chat, setChat] = useState<{ id: number; user: string; text: string }[]>([]);
-  const [stats, setStats] = useState({ bitrate: 2800, fps: 60, uptime: '00:00' });
-
-  type PanelKey = 'mask' | 'logos' | 'text' | 'audio' | 'chat' | 'title' | 'lower' | 'record' | 'whip' | 'remote' | 'analytics' | 'transition';
-  const [panels, setPanels] = useState<Record<PanelKey, boolean>>({
-    mask: true, logos: true, text: true, audio: true, chat: false, title: false,
-    lower: false, record: false, whip: false, remote: false, analytics: false, transition: false,
-  });
-  const togglePanel = (k: PanelKey) => setPanels(p => ({ ...p, [k]: !p[k] }));
-
-  const applyTemplate = useCallback((templateId: string) => {
-    if (templateId === 'match') {
-      setMasks([{ id: 1, x: 10, y: 5, w: 25, h: 8, type: 'clone', offsetX: -30, offsetY: 0, blend: 0.9, enabled: true }]);
-      setLowerThird({ enabled: true, text: 'المباراة الحية', subtext: 'جولة 3 • 2-1', color: '#f43f5e', bgColor: 'rgba(0,0,0,0.8)' });
-      setTextOverlays([{ id: 1, text: '⚽ LIVE', x: 85, y: 10, size: 30, color: '#ffffff', stroke: true, strokeColor: '#000000' }]);
-    } else if (templateId === 'gaming') {
-      setMasks([]);
-      setLowerThird({ enabled: true, text: '🎮 Gameplay', subtext: 'Level 15 • Boss Fight', color: '#8b5cf6', bgColor: 'rgba(0,0,0,0.7)' });
-    } else if (templateId === 'lesson') {
-      setMasks([{ id: 1, x: 5, y: 85, w: 90, h: 10, type: 'solid', offsetX: 0, offsetY: 0, blend: 0.8, enabled: true }]);
-      setLowerThird({ enabled: true, text: '📚 الدرس اليوم', subtext: 'الموضوع: الرياضيات', color: '#06b6d4', bgColor: 'rgba(0,0,0,0.7)' });
-    }
-  }, []);
-
-  useEffect(() => { if (config?.template && config.template !== 'none') applyTemplate(config.template); }, [config?.template, applyTemplate]);
-
-  useEffect(() => {
-    const chatInterval = setInterval(() => {
-      const names = ['أحمد', 'سارة', 'محمد', 'فاطمة', 'عمر', 'نور', 'يوسف', 'هدى'];
-      const msgs = ['أحسنت!', 'بث رهيب 🔥', 'من المغرب 🇲🇦', 'الإخفاء ممتاز', 'استمر!', '🎉🎉', 'واو الجودة عالية', 'كيف تعمل الإخفاء؟'];
-      setChat(prev => [{ id: Date.now(), user: names[Math.floor(Math.random() * names.length)], text: msgs[Math.floor(Math.random() * msgs.length)] }, ...prev.slice(0, 19)]);
-    }, 2500);
-    const analyticsInterval = setInterval(() => {
-      setAnalytics(prev => {
-        const newViewers = Math.max(100, prev.viewers + ((Math.random() - 0.45) * 15 | 0));
-        return { ...prev, viewers: newViewers, peakViewers: Math.max(prev.peakViewers, newViewers), chatMessages: prev.chatMessages + Math.floor(Math.random() * 3), reactions: prev.reactions + Math.floor(Math.random() * 2), history: [...prev.history.slice(1), newViewers] };
-      });
-    }, 3000);
-    return () => { clearInterval(chatInterval); clearInterval(analyticsInterval); };
-  }, []);
-
-  const initAudio = useCallback(async (stream: MediaStream) => {
-    if (!window.AudioContext && !(window as any).webkitAudioContext) return;
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    audioCtxRef.current = ctx;
-    const dest = ctx.createMediaStreamDestination();
-    destRef.current = dest;
-    const audioTrack = stream.getAudioTracks()[0];
-    if (audioTrack) {
-      const source = ctx.createMediaStreamSource(new MediaStream([audioTrack]));
-      sourceNodeRef.current = source;
-      source.connect(dest);
-    }
-  }, []);
-
-  const applyAudioFilter = useCallback((preset: string) => {
-    if (!audioCtxRef.current || !sourceNodeRef.current || !destRef.current) return;
-    const ctx = audioCtxRef.current;
-    filterNodesRef.current.forEach(n => n.disconnect());
-    filterNodesRef.current = [];
-    const dest = destRef.current;
-    dest.stream.getAudioTracks().forEach(t => t.enabled = !isMuted);
-    if (isMuted) return;
-    const cur = sourceNodeRef.current;
-    if (preset === 'bass') {
-      const f = ctx.createBiquadFilter(); f.type = 'lowshelf'; f.frequency.value = 100; f.gain.value = 8;
-      cur.connect(f); f.connect(dest); filterNodesRef.current = [f];
-    } else if (preset === 'voice') {
-      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 300;
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3500;
-      const g = ctx.createGain(); g.gain.value = 1.5;
-      cur.connect(hp); hp.connect(lp); lp.connect(g); g.connect(dest);
-      filterNodesRef.current = [hp, lp, g];
-    } else if (preset === 'echo') {
-      const d = ctx.createDelay(); d.delayTime.value = 0.2;
-      const f = ctx.createGain(); f.gain.value = 0.3;
-      cur.connect(dest); cur.connect(d); d.connect(f); f.connect(d); d.connect(dest);
-      filterNodesRef.current = [d, f];
-    } else {
-      cur.connect(dest);
-    }
-  }, [isMuted]);
-
-  const renderFrame = useCallback(() => {
-    const canvas = canvasRef.current;
-    const video = hiddenVideoRef.current;
-    if (!canvas || !video || !video.videoWidth) { animFrameRef.current = requestAnimationFrame(renderFrame); return; }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) { animFrameRef.current = requestAnimationFrame(renderFrame); return; }
-    const W = canvas.width, H = canvas.height;
-    if (canvas.width !== video.videoWidth) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
-
-    ctx.drawImage(video, 0, 0, W, H);
-
-    masks.filter(m => m.enabled).forEach(m => {
-      const mx = (m.x / 100) * W, my = (m.y / 100) * H, mw = (m.w / 100) * W, mh = (m.h / 100) * H;
-      ctx.save();
-      if (m.type === 'clone') {
-        const sx = Math.max(0, (m.x + (m.offsetX || 0)) / 100 * W);
-        const sy = Math.max(0, (m.y + (m.offsetY || 0)) / 100 * H);
-        ctx.drawImage(video, sx, sy, mw, mh, mx, my, mw, mh);
-        const grad = ctx.createRadialGradient(mx + mw / 2, my + mh / 2, 0, mx + mw / 2, my + mh / 2, (mw + mh) / 2.2);
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(1, `rgba(0,0,0,${(m.blend || 0.8) * 0.35})`);
-        ctx.fillStyle = grad; ctx.fillRect(mx, my, mw, mh);
-      } else if (m.type === 'blur') {
-        ctx.filter = 'blur(18px)';
-        ctx.drawImage(video, mx, my, mw, mh, mx, my, mw, mh);
-        ctx.filter = 'none';
-      } else if (m.type === 'solid') {
-        ctx.fillStyle = '#000000'; ctx.fillRect(mx, my, mw, mh);
-      }
-      ctx.restore();
-    });
-
-    logos.forEach(logo => {
-      if (logo.img) {
-        const lw = (logo.w / 100) * W, lh = (logo.h / 100) * H;
-        const lx = (logo.x / 100) * W, ly = (logo.y / 100) * H;
-        ctx.globalAlpha = logo.opacity || 0.9;
-        ctx.drawImage(logo.img, lx, ly, lw, lh);
-        ctx.globalAlpha = 1;
-      }
-    });
-
-    textOverlays.forEach(t => {
-      ctx.save();
-      const fontSize = (t.size / 100) * Math.min(W, H) * 0.5;
-      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const tx = (t.x / 100) * W, ty = (t.y / 100) * H;
-      if (t.stroke) {
-        ctx.strokeStyle = t.strokeColor || '#000000';
-        ctx.lineWidth = fontSize * 0.15; ctx.lineJoin = 'round';
-        ctx.strokeText(t.text, tx, ty);
-      }
-      ctx.fillStyle = t.color || '#ffffff';
-      ctx.fillText(t.text, tx, ty);
-      ctx.restore();
-    });
-
-    if (lowerThird.enabled && lowerThird.text) {
-      const barH = H * 0.08, barY = H * 0.82, barW = W * 0.7, barX = (W - barW) / 2;
-      ctx.save();
-      ctx.fillStyle = lowerThird.bgColor || 'rgba(0,0,0,0.75)';
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(barX, barY, barW, barH, 8); else ctx.rect(barX, barY, barW, barH);
-      ctx.fill();
-      ctx.fillStyle = lowerThird.color || '#06b6d4';
-      ctx.fillRect(barX, barY, 6, barH);
-      const titleFontSize = barH * 0.45, subFontSize = barH * 0.3;
-      ctx.font = `bold ${titleFontSize}px Arial`; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left';
-      ctx.fillText(lowerThird.text, barX + 16, barY + barH * 0.38);
-      if (lowerThird.subtext) {
-        ctx.font = `${subFontSize}px Arial`; ctx.fillStyle = '#9ca3af';
-        ctx.fillText(lowerThird.subtext, barX + 16, barY + barH * 0.7);
-      }
-      ctx.restore();
-    }
-
-    animFrameRef.current = requestAnimationFrame(renderFrame);
-  }, [masks, logos, textOverlays, lowerThird]);
-
-  const startRecording = useCallback((stream: MediaStream) => {
-    try {
-      recordedChunksRef.current = [];
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm';
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current.ondataavailable = (e) => { if (e.data.size > 0) recordedChunksRef.current.push(e.data); };
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        setRecordedFile({ url, name: `stream-${Date.now()}.webm`, size: blob.size });
-      };
-      mediaRecorderRef.current.start(1000);
-      setIsRecording(true);
-    } catch (e) { console.error('Recording error:', e); }
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  }, []);
-
-  const downloadRecording = useCallback(() => {
-    if (recordedFile) {
-      const a = document.createElement('a');
-      a.href = recordedFile.url;
-      a.download = recordedFile.name;
-      a.click();
-    }
-  }, [recordedFile]);
-
-  const connectWHIP = useCallback(async () => {
-    if (!whipEndpoint.trim()) { setWhipStatus('error'); return; }
-    setWhipStatus('connecting');
-    try {
-      await new Promise(r => setTimeout(r, 1500));
-      if (window.RTCPeerConnection) {
-        peerConnectionRef.current = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-      }
-      setWhipResourceId(`res_${Math.random().toString(36).slice(2, 10)}`);
-      setWhipStatus('connected');
-    } catch { setWhipStatus('error'); }
-  }, [whipEndpoint]);
-
-  const disconnectWHIP = useCallback(() => {
-    if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
-    setWhipStatus('idle'); setWhipResourceId('');
-  }, []);
-
-  const generateRemoteCode = useCallback(() => {
-    const code = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('');
-    setRemoteCode(code);
-    return code;
-  }, []);
-
-  const connectRemote = useCallback(() => {
-    generateRemoteCode();
-    setRemoteConnected(true);
-    setRemoteCommands(prev => [...prev, { time: new Date().toLocaleTimeString(), cmd: 'connected' }]);
-  }, [generateRemoteCode]);
-
-  const disconnectRemote = useCallback(() => {
-    setRemoteConnected(false); setRemoteCode('');
-  }, []);
-
-  const triggerTransition = useCallback((type: string) => {
-    setTransition({ active: true, type, duration: 500 });
-    setTimeout(() => setTransition(p => ({ ...p, active: false })), 500);
-  }, []);
-
-  const handleStop = useCallback(() => {
-    cancelAnimationFrame(animFrameRef.current);
-    if (hiddenVideoRef.current?.srcObject) (hiddenVideoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-    if (audioCtxRef.current) audioCtxRef.current.close();
-    stopRecording(); disconnectWHIP(); disconnectRemote();
-    onEnd();
-  }, [onEnd, stopRecording, disconnectWHIP, disconnectRemote]);
-
-  const startStream = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' } as any, audio: true });
-      if (hiddenVideoRef.current) {
-        hiddenVideoRef.current.srcObject = stream;
-        hiddenVideoRef.current.onloadedmetadata = () => {
-          if (canvasRef.current && hiddenVideoRef.current) {
-            canvasRef.current.width = hiddenVideoRef.current.videoWidth || 1280;
-            canvasRef.current.height = hiddenVideoRef.current.videoHeight || 720;
-          }
-          initAudio(stream);
-          animFrameRef.current = requestAnimationFrame(renderFrame);
-        };
-        stream.getVideoTracks()[0].onended = handleStop;
-      }
-    } catch { onEnd(); }
-  }, [initAudio, renderFrame, onEnd, handleStop]);
-
-  useEffect(() => { startStream(); }, [startStream]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const e = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      setStats(p => ({ ...p, bitrate: Math.round(2500 + Math.random() * 500), fps: Math.round(58 + Math.random() * 3), uptime: `${String(Math.floor(e / 60)).padStart(2, '0')}:${String(e % 60).padStart(2, '0')}` }));
-      if (isRecording) setRecordingTime(`${String(Math.floor(e / 60)).padStart(2, '0')}:${String(e % 60).padStart(2, '0')}`);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isRecording]);
-
-  useEffect(() => { applyAudioFilter(audioPreset); }, [audioPreset, isMuted, applyAudioFilter]);
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => setLogos(prev => [...prev, { id: Date.now(), src: url, img, x: 70, y: 5, w: 12, h: 12, opacity: 0.9 }]);
-    img.src = url;
-  };
-  const updateLogo = (id: number, key: string, val: number) => setLogos(prev => prev.map(l => l.id === id ? { ...l, [key]: val } : l));
-  const removeLogo = (id: number) => setLogos(prev => prev.filter(l => l.id !== id));
-  const addTextOverlay = () => { if (!newText.trim()) return; setTextOverlays(prev => [...prev, { id: Date.now(), text: newText, x: 50, y: 50, size: newTextSize, color: newTextColor, stroke: newTextStroke, strokeColor: newTextStrokeColor }]); setNewText(''); };
-  const updateTextOverlay = (id: number, key: string, val: number | string | boolean) => setTextOverlays(prev => prev.map(t => t.id === id ? { ...t, [key]: val } : t));
-  const removeTextOverlay = (id: number) => setTextOverlays(prev => prev.filter(t => t.id !== id));
-  const updateMask = (id: number, key: string, val: number | string | boolean) => setMasks(prev => prev.map(m => m.id === id ? { ...m, [key]: val } : m));
-  const addMask = () => { const id = Date.now(); setMasks(prev => [...prev, { id, x: 10, y: 10, w: 30, h: 15, type: 'clone', offsetX: 0, offsetY: 0, blend: 0.8, enabled: true }]); setSelectedMaskId(id); };
-  const removeMask = (id: number) => setMasks(prev => prev.filter(m => m.id !== id));
-
-  const renderAnalyticsChart = useMemo(() => {
-    const max = Math.max(...analytics.history);
-    return (
-      <div className="flex items-end gap-0.5 h-20 mt-2">
-        {analytics.history.map((v, i) => (
-          <div key={i} className="flex-1 bg-gradient-to-t from-cyan-600 to-fuchsia-500 rounded-t" style={{ height: `${(v / max) * 100}%` }} />
-        ))}
-      </div>
-    );
-  }, [analytics.history]);
+  const sel = (props: React.SelectHTMLAttributes<HTMLSelectElement>, children: React.ReactNode) => (
+    <select {...props} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition">
+      {children}
+    </select>
+  );
 
   return (
-    <div className="relative h-full bg-black flex flex-col overflow-hidden">
-      <canvas ref={canvasRef} className="w-full h-full object-contain bg-gray-950" />
-      <canvas ref={transitionCanvasRef} className="hidden" />
-      <video ref={hiddenVideoRef} autoPlay playsInline muted className="hidden" />
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
 
-      {masks.filter(m => m.enabled).map(m => (
-        <div key={m.id} className={`absolute border-2 z-20 pointer-events-none transition-colors ${selectedMaskId === m.id ? 'border-cyan-400 bg-cyan-400/10' : 'border-yellow-400/40 bg-yellow-400/5'}`}
-          style={{ left: `${m.x}%`, top: `${m.y}%`, width: `${m.w}%`, height: `${m.h}%` }}>
-          {selectedMaskId === m.id && <div className="absolute -top-5 left-0 bg-cyan-500 text-white text-[9px] px-1 rounded">إخفاء</div>}
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+          <span className="text-white font-bold flex items-center gap-2"><I.Settings s={18} /> الإعدادات</span>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition"><I.X s={18} /></button>
         </div>
-      ))}
-      {logos.map(l => (<div key={l.id} className="absolute border border-dashed border-fuchsia-400/40 z-20 pointer-events-none" style={{ left: `${l.x}%`, top: `${l.y}%`, width: `${l.w}%`, height: `${l.h}%` }} />))}
 
-      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md rounded-lg p-2 text-[10px] text-white font-mono space-y-0.5 z-30 select-none">
-        <div className="flex items-center gap-1 text-red-400 font-bold"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse inline-block"></span> LIVE</div>
-        <div>📶 {stats.bitrate} kbps</div>
-        <div>🎞 {stats.fps} fps</div>
-        <div>⏱ {stats.uptime}</div>
-        {isRecording && <div className="text-red-400 flex items-center gap-1"><Icons.Record s={10} /> {recordingTime}</div>}
-      </div>
-
-      {/* === لوحة الإخفاء الذكي === */}
-      <FloatingPanel title="الإخفاء الذكي" icon={<Icons.Shield />} defaultPos={{ x: 10, y: 40 }} minimized={!panels.mask} onToggle={() => togglePanel('mask')} width={290}>
-        <div className="space-y-2">
-          <button onClick={addMask} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs py-1.5 rounded-lg transition flex items-center justify-center gap-1"><Icons.Plus s={12} /> منطقة جديدة</button>
-          {masks.map(m => (
-            <div key={m.id} onClick={() => setSelectedMaskId(m.id)} className={`p-2 rounded-lg border cursor-pointer transition ${selectedMaskId === m.id ? 'border-cyan-500 bg-gray-800' : 'border-gray-700 bg-gray-900/50'}`}>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-300">منطقة #{String(m.id).slice(-3)} ({m.type})</span>
-                <div className="flex gap-1">
-                  <button onClick={e => { e.stopPropagation(); updateMask(m.id, 'enabled', !m.enabled); }} className={`text-[10px] px-1.5 py-0.5 rounded ${m.enabled ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-500'}`}>{m.enabled ? 'مفعّل' : 'معطّل'}</button>
-                  <button onClick={e => { e.stopPropagation(); removeMask(m.id); }} className="text-gray-500 hover:text-red-400"><Icons.Trash /></button>
-                </div>
-              </div>
-              {selectedMaskId === m.id && m.enabled && (
-                <div className="mt-2 space-y-1.5 pt-2 border-t border-gray-700">
-                  <select value={m.type} onChange={e => updateMask(m.id, 'type', e.target.value)} className="w-full bg-gray-900 text-xs p-1.5 rounded border border-gray-600 text-white">
-                    <option value="clone">نسخ ذكي (الأفضل)</option>
-                    <option value="blur">ضبابي</option>
-                    <option value="solid">أسود صلب</option>
-                  </select>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div><label className="text-[9px] text-gray-500">إزاحة X</label><input type="range" min="-60" max="60" value={m.offsetX} onChange={e => updateMask(m.id, 'offsetX', +e.target.value)} className="w-full h-4" /></div>
-                    <div><label className="text-[9px] text-gray-500">إزاحة Y</label><input type="range" min="-60" max="60" value={m.offsetY} onChange={e => updateMask(m.id, 'offsetY', +e.target.value)} className="w-full h-4" /></div>
-                  </div>
-                  <div><label className="text-[9px] text-gray-500">قوة الدمج</label><input type="range" min="0" max="1" step="0.05" value={m.blend} onChange={e => updateMask(m.id, 'blend', +e.target.value)} className="w-full h-4" /></div>
-                </div>
-              )}
-            </div>
+        {/* Tabs */}
+        <div className="flex border-b border-gray-800">
+          {([['stream', 'البث'], ['chat', 'الشات'], ['video', 'الفيديو']] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)}
+              className={`flex-1 py-2.5 text-sm font-medium transition ${tab === k ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-500 hover:text-gray-300'}`}>
+              {l}
+            </button>
           ))}
         </div>
-      </FloatingPanel>
 
-      {/* === لوحة التسجيل === */}
-      <FloatingPanel title="التسجيل المحلي" icon={<Icons.Record />} defaultPos={{ x: 10, y: 280 }} minimized={!panels.record} onToggle={() => togglePanel('record')} width={290}>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-300">تسجيل البث</span>
-            <button onClick={() => isRecording ? stopRecording() : startRecording(canvasRef.current?.captureStream(60) as MediaStream)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}>
-              {isRecording ? <><Icons.Record s={12} /> إيقاف</> : <><Icons.Record s={12} /> بدء</>}
-            </button>
+        {/* Body */}
+        <div className="p-5 space-y-4 max-h-96 overflow-y-auto">
+
+          {tab === 'stream' && <>
+            {field('منصة البث', sel({ value: s.platform, onChange: e => setS(x => ({ ...x, platform: e.target.value as AppSettings['platform'], whipEndpoint: '' })) },
+              Object.entries(PLATFORM_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)
+            ))}
+
+            {field('WHIP Endpoint', <div className="space-y-1">
+              {inp({ placeholder: PLATFORM_HINTS[s.platform], value: s.whipEndpoint, onChange: e => setS(x => ({ ...x, whipEndpoint: e.target.value })) })}
+            </div>)}
+
+            {field('Bearer Token (اختياري)', <div className="relative">
+              {inp({ type: showToken ? 'text' : 'password', placeholder: '••••••••', value: s.bearerToken, onChange: e => setS(x => ({ ...x, bearerToken: e.target.value })) })}
+              <button onClick={() => setShowToken(v => !v)} className="absolute left-3 top-2.5 text-gray-500 hover:text-white">
+                {showToken ? <I.EyeOff /> : <I.Eye />}
+              </button>
+            </div>)}
+
+            <div className="bg-gray-800/60 rounded-lg p-3 text-xs text-gray-400 space-y-1">
+              <p className="font-semibold text-gray-300">المنصات المدعومة (WebRTC/WHIP):</p>
+              <p>• <span className="text-cyan-400">Cloudflare Stream</span> — cloudflare.com/products/cloudflare-stream</p>
+              <p>• <span className="text-cyan-400">LiveKit</span> — livekit.io</p>
+              <p>• <span className="text-cyan-400">Mux</span> — mux.com</p>
+              <p className="text-gray-500 pt-1">يوتيوب وتويتش يستخدمان RTMP وليس WHIP، لذا لا يدعمان البث من المتصفح مباشرة.</p>
+            </div>
+          </>}
+
+          {tab === 'chat' && <>
+            {field('منصة الشات', sel({ value: s.chatPlatform, onChange: e => setS(x => ({ ...x, chatPlatform: e.target.value as AppSettings['chatPlatform'] })) },
+              <><option value="none">بدون شات</option><option value="youtube">YouTube Live</option><option value="twitch">Twitch</option></>
+            ))}
+
+            {s.chatPlatform === 'youtube' && field('معرّف الفيديو على يوتيوب', <>
+              {inp({ placeholder: 'مثال: dQw4w9WgXcQ', value: s.youtubeVideoId, onChange: e => setS(x => ({ ...x, youtubeVideoId: e.target.value })) })}
+              <p className="text-xs text-gray-500 mt-1">من رابط البث: youtube.com/watch?v=<span className="text-cyan-400">المعرّف</span></p>
+            </>)}
+
+            {s.chatPlatform === 'twitch' && field('اسم القناة على تويتش', <>
+              {inp({ placeholder: 'مثال: ninja', value: s.twitchChannel, onChange: e => setS(x => ({ ...x, twitchChannel: e.target.value })) })}
+            </>)}
+          </>}
+
+          {tab === 'video' && <>
+            {field('الدقة', sel({ value: s.resolution, onChange: e => setS(x => ({ ...x, resolution: e.target.value as AppSettings['resolution'] })) },
+              <><option value="480p">480p (SD)</option><option value="720p">720p (HD)</option><option value="1080p">1080p (Full HD)</option></>
+            ))}
+
+            {field(`معدل البت: ${s.videoBitrate} Kbps`, <input type="range" min={500} max={8000} step={500} value={s.videoBitrate}
+              onChange={e => setS(x => ({ ...x, videoBitrate: +e.target.value }))}
+              className="w-full accent-cyan-500" />)}
+
+            <div className="text-xs text-gray-500 space-y-0.5">
+              <p>500–1500 Kbps — جودة منخفضة</p>
+              <p>2000–4000 Kbps — جودة جيدة (موصى به)</p>
+              <p>5000–8000 Kbps — جودة عالية</p>
+            </div>
+          </>}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-2 px-5 py-4 border-t border-gray-800">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-400 hover:text-white text-sm transition">إلغاء</button>
+          <button onClick={save} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-fuchsia-600 text-white font-bold text-sm hover:opacity-90 transition">حفظ</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const [settings, setSettingsState] = useState<AppSettings>(loadSettings);
+  const [showSettings, setShowSettings] = useState(() => !localStorage.getItem('ss_settings'));
+
+  // Media state
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
+  // Stream state
+  const [streaming, setStreaming] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [streamError, setStreamError] = useState('');
+  const [elapsed, setElapsed] = useState(0);
+  const [rtcStats, setRtcStats] = useState<RtcStats>({ videoBitrate: 0, audioBitrate: 0, fps: 0, packetLoss: 0, rtt: 0, width: 0, height: 0 });
+
+  // Recording
+  const [recording, setRecording] = useState(false);
+
+  // Overlays
+  const [logo, setLogo] = useState<string | null>(null);
+  const [logoPos, setLogoPos] = useState({ x: 20, y: 20 });
+  const [texts, setTexts] = useState<TextOverlay[]>([]);
+  const [newText, setNewText] = useState('');
+  const [textColor, setTextColor] = useState('#ffffff');
+  const [textSize, setTextSize] = useState(24);
+  const [hideRegions, setHideRegions] = useState<HideRegion[]>([]);
+
+  // UI tabs
+  const [rightTab, setRightTab] = useState<'stats' | 'chat' | 'overlay'>('stats');
+  const [drawingHide, setDrawingHide] = useState(false);
+  const [hideMode, setHideMode] = useState<HideRegion['mode']>('blur');
+
+  // Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recChunks = useRef<Blob[]>([]);
+  const statsTimer = useRef<number>(0);
+  const elapsedTimer = useRef<number>(0);
+  const prevVideoBytes = useRef(0);
+  const prevAudioBytes = useRef(0);
+  const prevStatsTs = useRef(Date.now());
+  const drawStart = useRef<{ x: number; y: number } | null>(null);
+  const animRef = useRef<number>(0);
+
+  // ── Reload settings after closing modal ───────────────────────────────────
+  const handleSettingsClose = useCallback(() => {
+    setSettingsState(loadSettings());
+    setShowSettings(false);
+  }, []);
+
+  // ── Canvas rendering loop ──────────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
+    const ctx = canvas.getContext('2d')!;
+
+    const draw = () => {
+      animRef.current = requestAnimationFrame(draw);
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      if (video.readyState >= 2) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Hide regions
+      hideRegions.forEach(r => {
+        const sx = r.x * canvas.width;
+        const sy = r.y * canvas.height;
+        const sw = r.w * canvas.width;
+        const sh = r.h * canvas.height;
+        if (r.mode === 'black') {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(sx, sy, sw, sh);
+        } else if (r.mode === 'blur') {
+          ctx.filter = 'blur(12px)';
+          ctx.drawImage(canvas, sx, sy, sw, sh, sx, sy, sw, sh);
+          ctx.filter = 'none';
+        } else {
+          // smart: pixelate
+          const tmp = document.createElement('canvas');
+          tmp.width = 8; tmp.height = 8;
+          const tc = tmp.getContext('2d')!;
+          tc.drawImage(canvas, sx, sy, sw, sh, 0, 0, 8, 8);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(tmp, 0, 0, 8, 8, sx, sy, sw, sh);
+          ctx.imageSmoothingEnabled = true;
+        }
+      });
+
+      // Logo
+      if (logo) {
+        const img = new Image();
+        img.src = logo;
+        ctx.drawImage(img, logoPos.x, logoPos.y, 100, 100);
+      }
+
+      // Texts
+      texts.forEach(t => {
+        ctx.font = `bold ${t.size}px sans-serif`;
+        ctx.fillStyle = t.color;
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 6;
+        ctx.fillText(t.text, t.x, t.y);
+        ctx.shadowBlur = 0;
+      });
+
+      // LIVE badge
+      if (streaming) {
+        ctx.fillStyle = 'rgba(220,38,38,0.9)';
+        ctx.beginPath();
+        ctx.roundRect(12, 12, 58, 24, 6);
+        ctx.fill();
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('● LIVE', 18, 29);
+      }
+    };
+
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [screenStream, hideRegions, logo, logoPos, texts, streaming]);
+
+  // ── Screen capture ─────────────────────────────────────────────────────────
+  const startCapture = useCallback(async () => {
+    try {
+      const resMap = { '480p': { width: 854, height: 480 }, '720p': { width: 1280, height: 720 }, '1080p': { width: 1920, height: 1080 } };
+      const res = resMap[settings.resolution];
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30, width: { ideal: res.width }, height: { ideal: res.height } },
+        audio: true,
+      });
+      setScreenStream(stream);
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        setScreenStream(null);
+        if (videoRef.current) videoRef.current.srcObject = null;
+        stopStream();
+      });
+    } catch (e: unknown) {
+      setStreamError((e as Error).message || 'فشل التقاط الشاشة');
+    }
+  }, [settings.resolution]);
+
+  const stopCapture = useCallback(() => {
+    screenStream?.getTracks().forEach(t => t.stop());
+    setScreenStream(null);
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, [screenStream]);
+
+  // ── Mic ────────────────────────────────────────────────────────────────────
+  const toggleMic = useCallback(async () => {
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); setMicStream(null); return; }
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicStream(s);
+    } catch { setStreamError('لا يمكن الوصول إلى الميكروفون'); }
+  }, [micStream]);
+
+  // ── Camera ─────────────────────────────────────────────────────────────────
+  const toggleCamera = useCallback(async () => {
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); return; }
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: true });
+      setCameraStream(s);
+    } catch { setStreamError('لا يمكن الوصول إلى الكاميرا'); }
+  }, [cameraStream]);
+
+  // ── Build combined stream ──────────────────────────────────────────────────
+  const buildStream = useCallback((): MediaStream | null => {
+    if (!screenStream) return null;
+    const tracks: MediaStreamTrack[] = [...screenStream.getVideoTracks()];
+    const audioTracks = [
+      ...screenStream.getAudioTracks(),
+      ...(micStream?.getAudioTracks() ?? []),
+    ];
+    if (audioTracks.length > 0) tracks.push(audioTracks[0]);
+    return new MediaStream(tracks);
+  }, [screenStream, micStream]);
+
+  // ── WHIP stream ────────────────────────────────────────────────────────────
+  const startStream = useCallback(async () => {
+    const combined = buildStream();
+    if (!combined) { setStreamError('شارك شاشتك أولاً'); return; }
+    if (!settings.whipEndpoint) { setShowSettings(true); return; }
+
+    setConnecting(true);
+    setStreamError('');
+
+    try {
+      const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }] });
+      pcRef.current = pc;
+
+      combined.getTracks().forEach(t => pc.addTrack(t, combined));
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      await new Promise<void>(res => {
+        if (pc.iceGatheringState === 'complete') { res(); return; }
+        const check = () => { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', check); res(); } };
+        pc.addEventListener('icegatheringstatechange', check);
+        setTimeout(res, 4000);
+      });
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/sdp' };
+      if (settings.bearerToken) headers['Authorization'] = `Bearer ${settings.bearerToken}`;
+
+      const resp = await fetch(settings.whipEndpoint, { method: 'POST', headers, body: pc.localDescription!.sdp });
+      if (!resp.ok) throw new Error(`الخادم رفض الاتصال (${resp.status})`);
+      const answerSdp = await resp.text();
+      await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+      setStreaming(true);
+      setConnecting(false);
+
+      // Real WebRTC stats
+      prevVideoBytes.current = 0;
+      prevAudioBytes.current = 0;
+      prevStatsTs.current = Date.now();
+
+      statsTimer.current = window.setInterval(async () => {
+        if (!pcRef.current) return;
+        const rpts = await pcRef.current.getStats();
+        const now = Date.now();
+        const dt = (now - prevStatsTs.current) / 1000;
+        let vb = 0, ab = 0, fps = 0, loss = 0, rtt = 0, w = 0, h = 0;
+
+        rpts.forEach(r => {
+          if (r.type === 'outbound-rtp') {
+            const bytes: number = (r as RTCOutboundRtpStreamStats).bytesSent ?? 0;
+            if ((r as RTCOutboundRtpStreamStats).kind === 'video') {
+              vb = Math.round(((bytes - prevVideoBytes.current) * 8) / dt / 1000);
+              prevVideoBytes.current = bytes;
+              fps = Math.round((r as RTCOutboundRtpStreamStats & { framesPerSecond?: number }).framesPerSecond ?? 0);
+              w = (r as RTCOutboundRtpStreamStats & { frameWidth?: number }).frameWidth ?? 0;
+              h = (r as RTCOutboundRtpStreamStats & { frameHeight?: number }).frameHeight ?? 0;
+            }
+            if ((r as RTCOutboundRtpStreamStats).kind === 'audio') {
+              ab = Math.round(((bytes - prevAudioBytes.current) * 8) / dt / 1000);
+              prevAudioBytes.current = bytes;
+            }
+          }
+          if (r.type === 'remote-inbound-rtp' && (r as RTCRemoteInboundRtpStreamStats).kind === 'video') {
+            loss = Math.round(((r as RTCRemoteInboundRtpStreamStats & { fractionLost?: number }).fractionLost ?? 0) * 100);
+            rtt = Math.round(((r as RTCRemoteInboundRtpStreamStats).roundTripTime ?? 0) * 1000);
+          }
+        });
+
+        prevStatsTs.current = now;
+        setRtcStats({ videoBitrate: vb, audioBitrate: ab, fps, packetLoss: loss, rtt, width: w, height: h });
+      }, 1500);
+
+      elapsedTimer.current = window.setInterval(() => setElapsed(e => e + 1), 1000);
+
+    } catch (e: unknown) {
+      setStreamError((e as Error).message || 'فشل الاتصال');
+      setConnecting(false);
+      pcRef.current?.close();
+      pcRef.current = null;
+    }
+  }, [buildStream, settings]);
+
+  const stopStream = useCallback(() => {
+    clearInterval(statsTimer.current);
+    clearInterval(elapsedTimer.current);
+    pcRef.current?.close();
+    pcRef.current = null;
+    setStreaming(false);
+    setConnecting(false);
+    setElapsed(0);
+    setRtcStats({ videoBitrate: 0, audioBitrate: 0, fps: 0, packetLoss: 0, rtt: 0, width: 0, height: 0 });
+  }, []);
+
+  // ── Recording ──────────────────────────────────────────────────────────────
+  const toggleRecording = useCallback(() => {
+    const combined = buildStream();
+    if (!combined) { setStreamError('شارك شاشتك أولاً'); return; }
+
+    if (recording) {
+      recorderRef.current?.stop();
+      setRecording(false);
+      return;
+    }
+
+    recChunks.current = [];
+    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+    const rec = new MediaRecorder(combined, { mimeType: mime });
+    rec.ondataavailable = e => { if (e.data.size > 0) recChunks.current.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(recChunks.current, { type: 'video/webm' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `rec-${Date.now()}.webm`;
+      a.click();
+    };
+    rec.start(1000);
+    recorderRef.current = rec;
+    setRecording(true);
+  }, [buildStream, recording]);
+
+  // ── Logo upload ────────────────────────────────────────────────────────────
+  const uploadLogo = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => setLogo(ev.target?.result as string);
+    reader.readAsDataURL(f);
+  }, []);
+
+  // ── Add text overlay ───────────────────────────────────────────────────────
+  const addText = useCallback(() => {
+    if (!newText.trim()) return;
+    setTexts(ts => [...ts, { id: Date.now(), text: newText, x: 40, y: 60, color: textColor, size: textSize }]);
+    setNewText('');
+  }, [newText, textColor, textSize]);
+
+  // ── Canvas draw (hide regions) ─────────────────────────────────────────────
+  const onCanvasPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingHide) return;
+    const r = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    drawStart.current = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+  }, [drawingHide]);
+
+  const onCanvasPointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingHide || !drawStart.current) return;
+    const r = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    const ex = (e.clientX - r.left) / r.width;
+    const ey = (e.clientY - r.top) / r.height;
+    const x = Math.min(drawStart.current.x, ex);
+    const y = Math.min(drawStart.current.y, ey);
+    const w = Math.abs(ex - drawStart.current.x);
+    const h = Math.abs(ey - drawStart.current.y);
+    if (w > 0.01 && h > 0.01) {
+      setHideRegions(rs => [...rs, { id: Date.now(), x, y, w, h, mode: hideMode }]);
+    }
+    drawStart.current = null;
+    setDrawingHide(false);
+  }, [drawingHide, hideMode]);
+
+  // ── Chat URL ───────────────────────────────────────────────────────────────
+  const chatUrl = (() => {
+    const domain = window.location.hostname;
+    if (settings.chatPlatform === 'youtube' && settings.youtubeVideoId)
+      return `https://www.youtube.com/live_chat?v=${settings.youtubeVideoId}&embed_domain=${domain}`;
+    if (settings.chatPlatform === 'twitch' && settings.twitchChannel)
+      return `https://www.twitch.tv/embed/${settings.twitchChannel}/chat?parent=${domain}&darkpopout`;
+    return null;
+  })();
+
+  const hasCaptured = !!screenStream;
+  const statusColor = streaming ? 'text-red-400' : connecting ? 'text-yellow-400' : 'text-gray-500';
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-950 text-white overflow-hidden">
+
+      {/* ── Header ── */}
+      <header className="flex items-center justify-between px-4 py-2.5 border-b border-gray-800 bg-gray-900/80 backdrop-blur shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-fuchsia-500 flex items-center justify-center">
+            <I.Broadcast s={16} />
           </div>
-          {isRecording && <div className="text-center text-red-400 text-sm font-mono animate-pulse">⏺ يسجل: {recordingTime}</div>}
-          {recordedFile && (
-            <div className="bg-gray-800 p-3 rounded-lg space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-300 truncate">{recordedFile.name}</span>
-                <span className="text-gray-500">{(recordedFile.size / 1024 / 1024).toFixed(1)} MB</span>
-              </div>
-              <button onClick={downloadRecording} className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs py-2 rounded-lg transition flex items-center justify-center gap-1"><Icons.Download s={12} /> تحميل</button>
+          <span className="font-bold text-sm tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-fuchsia-400">
+            StreamSphere Pro
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {streaming && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-red-400 text-xs font-mono font-bold">{fmt(elapsed)}</span>
             </div>
           )}
-          <div className="text-[10px] text-gray-500">يتم التسجيل بصيغة WebM عالية الجودة</div>
+          {settings.whipEndpoint && (
+            <span className="text-xs text-gray-500 hidden sm:block">{PLATFORM_LABELS[settings.platform]}</span>
+          )}
+          <button onClick={() => setShowSettings(true)}
+            className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition">
+            <I.Settings s={18} />
+          </button>
         </div>
-      </FloatingPanel>
+      </header>
 
-      {/* === لوحة WHIP === */}
-      <FloatingPanel title="بث قياسي (WHIP)" icon={<Icons.Link />} defaultPos={{ x: window.innerWidth - 300, y: 40 }} minimized={!panels.whip} onToggle={() => togglePanel('whip')} width={290}>
-        <div className="space-y-2">
-          <input value={whipEndpoint} onChange={e => setWhipEndpoint(e.target.value)} placeholder="https://your-server/whip"
-            className="w-full bg-gray-900 text-white text-xs px-2 py-1.5 rounded border border-gray-600 focus:border-cyan-500 focus:outline-none" />
-          <div className="flex gap-2">
-            <button onClick={connectWHIP} disabled={whipStatus === 'connecting'}
-              className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs py-2 rounded-lg transition disabled:opacity-50">
-              {whipStatus === 'connecting' ? 'جارٍ...' : 'اتصال'}
+      {/* ── Body ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Left: Controls */}
+        <aside className="w-14 flex flex-col items-center gap-3 py-4 border-r border-gray-800 bg-gray-900/40 shrink-0">
+          <Tooltip label={hasCaptured ? 'إيقاف الشاشة' : 'مشاركة الشاشة'}>
+            <button onClick={hasCaptured ? stopCapture : startCapture}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${hasCaptured ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/30' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              <I.Monitor s={18} />
             </button>
-            {whipStatus === 'connected' && <button onClick={disconnectWHIP} className="px-3 bg-red-600 hover:bg-red-500 text-white text-xs py-2 rounded-lg transition">قطع</button>}
-          </div>
-          {whipStatus === 'connected' && <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-2 text-xs text-green-400">✓ متصل • {whipResourceId}</div>}
-          {whipStatus === 'error' && <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-2 text-xs text-red-400">❌ فشل الاتصال</div>}
-          <div className="text-[10px] text-gray-500">معيار WHIP للبث عبر WebRTC (IETF)</div>
-        </div>
-      </FloatingPanel>
+          </Tooltip>
 
-      {/* === لوحة التحكم عن بعد === */}
-      <FloatingPanel title="التحكم عن بعد" icon={<Icons.Remote />} defaultPos={{ x: window.innerWidth - 300, y: 220 }} minimized={!panels.remote} onToggle={() => togglePanel('remote')} width={290}>
-        <div className="space-y-3">
-          {!remoteConnected ? (
-            <>
-              <button onClick={connectRemote} className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs py-2 rounded-lg transition">إنشاء كود اتصال</button>
-              {remoteCode && (
-                <div className="bg-gray-800 p-3 rounded-lg text-center">
-                  <div className="text-gray-400 text-xs mb-1">كود الجهاز الثاني:</div>
-                  <div className="text-2xl font-mono font-bold tracking-wider text-cyan-400">{remoteCode}</div>
-                  <button onClick={() => navigator.clipboard.writeText(remoteCode)} className="mt-2 text-[10px] text-gray-400 hover:text-white flex items-center justify-center gap-1 mx-auto"><Icons.Copy s={10} /> نسخ</button>
+          <Tooltip label={micStream ? 'كتم الميكروفون' : 'تفعيل الميكروفون'}>
+            <button onClick={toggleMic}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${micStream ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              {micStream ? <I.Mic s={18} /> : <I.MicOff s={18} />}
+            </button>
+          </Tooltip>
+
+          <Tooltip label={cameraStream ? 'إيقاف الكاميرا' : 'تفعيل الكاميرا'}>
+            <button onClick={toggleCamera}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${cameraStream ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              {cameraStream ? <I.Camera s={18} /> : <I.CameraOff s={18} />}
+            </button>
+          </Tooltip>
+
+          <div className="w-6 border-t border-gray-700 my-1" />
+
+          <Tooltip label={recording ? 'إيقاف التسجيل' : 'تسجيل محلي'}>
+            <button onClick={toggleRecording}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${recording ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              {recording ? <I.Stop s={18} /> : <I.Record s={18} />}
+            </button>
+          </Tooltip>
+        </aside>
+
+        {/* Center: Preview canvas */}
+        <main className="flex-1 flex flex-col overflow-hidden relative">
+          <div className="flex-1 relative bg-black">
+            <video ref={videoRef} className="hidden" autoPlay muted playsInline />
+            <canvas ref={canvasRef} className={`w-full h-full object-contain ${drawingHide ? 'cursor-crosshair' : ''}`}
+              onPointerDown={onCanvasPointerDown} onPointerUp={onCanvasPointerUp} />
+
+            {!hasCaptured && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
+                <div className="w-16 h-16 rounded-2xl bg-gray-800/80 flex items-center justify-center">
+                  <I.Monitor s={32} />
                 </div>
+                <p className="text-gray-500 text-sm">اضغط أيقونة الشاشة لبدء المشاركة</p>
+              </div>
+            )}
+
+            {/* Camera PiP */}
+            {cameraStream && <CameraPreview stream={cameraStream} />}
+          </div>
+
+          {/* Bottom bar */}
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-800 bg-gray-900/60 shrink-0">
+            {/* Error */}
+            {streamError && (
+              <span className="text-red-400 text-xs flex-1 mr-3">{streamError}</span>
+            )}
+            {!streamError && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className={statusColor}>
+                  {streaming ? <><I.Wifi s={12} /> بث مباشر</> : connecting ? 'جارٍ الاتصال...' : <><I.WifiOff s={12} /> غير متصل</>}
+                </span>
+                {streaming && rtcStats.width > 0 && (
+                  <span className="text-gray-600">{rtcStats.width}×{rtcStats.height}</span>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mr-auto">
+              {!settings.whipEndpoint && (
+                <button onClick={() => setShowSettings(true)}
+                  className="text-xs text-yellow-400 underline underline-offset-2">
+                  اضبط إعدادات البث
+                </button>
               )}
-            </>
-          ) : (
-            <>
-              <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-2 text-xs text-green-400 flex justify-between items-center">
-                <span>✓ متصل</span>
-                <button onClick={disconnectRemote} className="text-red-400 hover:text-red-300">قطع</button>
-              </div>
-              <div className="text-[10px] text-gray-400">الأوامر الأخيرة:</div>
-              <div className="max-h-24 overflow-y-auto space-y-1 text-xs">
-                {remoteCommands.slice(-5).reverse().map((cmd, i) => (
-                  <div key={i} className="bg-gray-800/50 p-1.5 rounded">{cmd.time} • {cmd.cmd}</div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </FloatingPanel>
-
-      {/* === لوحة التحليلات === */}
-      <FloatingPanel title="تحليلات البث" icon={<Icons.Chart />} defaultPos={{ x: 10, y: 460 }} minimized={!panels.analytics} onToggle={() => togglePanel('analytics')} width={320}>
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-gray-800/50 p-2 rounded-lg">
-              <div className="text-lg font-bold text-cyan-400">{analytics.viewers.toLocaleString()}</div>
-              <div className="text-[9px] text-gray-400">مشاهدون</div>
-            </div>
-            <div className="bg-gray-800/50 p-2 rounded-lg">
-              <div className="text-lg font-bold text-fuchsia-400">{analytics.peakViewers.toLocaleString()}</div>
-              <div className="text-[9px] text-gray-400">الذروة</div>
-            </div>
-            <div className="bg-gray-800/50 p-2 rounded-lg">
-              <div className="text-lg font-bold text-green-400">{analytics.engagement}%</div>
-              <div className="text-[9px] text-gray-400">تفاعل</div>
+              {!streaming ? (
+                <button onClick={startStream} disabled={connecting || !hasCaptured}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 text-white font-bold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-lg shadow-red-500/20 flex items-center gap-2">
+                  {connecting && <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
+                  <I.Broadcast s={16} />
+                  {connecting ? 'جارٍ الاتصال...' : 'بث مباشر'}
+                </button>
+              ) : (
+                <button onClick={stopStream}
+                  className="px-5 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm transition flex items-center gap-2">
+                  <I.Stop s={16} />
+                  إيقاف البث
+                </button>
+              )}
             </div>
           </div>
-          {renderAnalyticsChart}
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="text-gray-300">💬 {analytics.chatMessages}</div>
-            <div className="text-gray-300">❤️ {analytics.reactions}</div>
-            <div className="text-gray-300">📤 {analytics.shares}</div>
-          </div>
-        </div>
-      </FloatingPanel>
+        </main>
 
-      {/* === لوحة المؤثرات الانتقالية === */}
-      <FloatingPanel title="المؤثرات الانتقالية" icon={<Icons.Transition />} defaultPos={{ x: window.innerWidth / 2 - 145, y: window.innerHeight - 220 }} minimized={!panels.transition} onToggle={() => togglePanel('transition')} width={290}>
-        <div className="space-y-2">
-          <div className="text-[10px] text-gray-400 mb-1">اختر تأثير الانتقال:</div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'fade', name: 'تلاشي', emoji: '🌫️' },
-              { id: 'slide', name: 'انزلاق', emoji: '➡️' },
-              { id: 'zoom', name: 'تكبير', emoji: '🔍' },
-              { id: 'blur', name: 'ضبابي', emoji: '💫' },
-              { id: 'flip', name: 'قلب', emoji: '🔄' },
-              { id: 'wipe', name: 'مسح', emoji: '🧹' },
-            ].map(t => (
-              <button key={t.id} onClick={() => triggerTransition(t.id)} className="bg-gray-800 hover:bg-gray-700 p-2 rounded-lg text-xs text-white transition flex flex-col items-center gap-1">
-                <span className="text-lg">{t.emoji}</span>
-                <span>{t.name}</span>
+        {/* Right panel */}
+        <aside className="w-72 flex flex-col border-l border-gray-800 bg-gray-900/40 shrink-0 overflow-hidden">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-800 shrink-0">
+            {([['stats', <I.Chart s={14} />, 'إحصائيات'], ['chat', <I.Chat s={14} />, 'شات'], ['overlay', <I.Image s={14} />, 'طبقات']] as const).map(([k, icon, l]) => (
+              <button key={k} onClick={() => setRightTab(k)}
+                className={`flex-1 py-2.5 text-xs font-medium flex items-center justify-center gap-1 transition ${rightTab === k ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-500 hover:text-gray-300'}`}>
+                {icon}{l}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-gray-400">المدة:</label>
-            <input type="range" min="200" max="2000" step="100" value={transition.duration} onChange={e => setTransition(p => ({ ...p, duration: +e.target.value }))} className="flex-1" />
-            <span className="text-[10px] text-gray-300">{transition.duration}ms</span>
-          </div>
-        </div>
-      </FloatingPanel>
 
-      {/* === فلاتر الصوت === */}
-      <FloatingPanel title="فلاتر الصوت" icon={<Icons.Mic />} defaultPos={{ x: window.innerWidth / 2 - 145, y: 10 }} minimized={!panels.audio} onToggle={() => togglePanel('audio')} width={290}>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-300">كتم الصوت</span>
-            <button onClick={() => setIsMuted(!isMuted)} className={`w-8 h-4 rounded-full p-0.5 transition ${isMuted ? 'bg-red-500' : 'bg-gray-600'}`}>
-              <motion.div animate={{ x: isMuted ? 14 : 0 }} className="w-3 h-3 bg-white rounded-full" />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {[['clear', 'صافي'], ['bass', 'جهوري'], ['voice', 'راديو'], ['echo', 'صدى']].map(([p, l]) => (
-              <button key={p} onClick={() => setAudioPreset(p)}
-                className={`px-3 py-2 rounded-lg text-xs font-medium transition ${audioPreset === p ? 'bg-fuchsia-600 text-white' : 'bg-gray-800 text-gray-300'}`}>{l}</button>
-            ))}
-          </div>
-        </div>
-      </FloatingPanel>
-
-      {/* === النصوص === */}
-      <FloatingPanel title="النصوص" icon={<Icons.Type />} defaultPos={{ x: window.innerWidth - 300, y: 400 }} minimized={!panels.text} onToggle={() => togglePanel('text')} width={290}>
-        <div className="space-y-2">
-          <div className="flex gap-1.5">
-            <input value={newText} onChange={e => setNewText(e.target.value)} placeholder="نص جديد..."
-              className="flex-1 bg-gray-900 text-white text-xs px-2 py-1.5 rounded border border-gray-600 focus:outline-none focus:border-cyan-500" />
-            <button onClick={addTextOverlay} className="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs transition"><Icons.Plus /></button>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            <div><label className="text-[9px] text-gray-500">الحجم</label><input type="range" min="10" max="60" value={newTextSize} onChange={e => setNewTextSize(+e.target.value)} className="w-full h-4" /></div>
-            <div><label className="text-[9px] text-gray-500">اللون</label><input type="color" value={newTextColor} onChange={e => setNewTextColor(e.target.value)} className="w-full h-6 rounded cursor-pointer" /></div>
-            <div className="flex items-center gap-1 mt-3"><input type="checkbox" checked={newTextStroke} onChange={e => setNewTextStroke(e.target.checked)} className="w-3 h-3" /><label className="text-[9px] text-gray-400">حافة</label></div>
-          </div>
-          {textOverlays.map(t => (
-            <div key={t.id} className="bg-gray-900/60 p-2 rounded-lg border border-gray-700 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-xs text-gray-300 truncate max-w-[120px]">{t.text}</span>
-                <button onClick={() => removeTextOverlay(t.id)} className="text-gray-500 hover:text-red-400"><Icons.Trash /></button>
+          <div className="flex-1 overflow-y-auto">
+            {/* Stats tab */}
+            {rightTab === 'stats' && (
+              <div className="p-3 space-y-2">
+                {streaming ? (
+                  <>
+                    <StatRow label="فيديو" value={`${rtcStats.videoBitrate} Kbps`} color="cyan" bar={rtcStats.videoBitrate / settings.videoBitrate} />
+                    <StatRow label="صوت" value={`${rtcStats.audioBitrate} Kbps`} color="green" bar={rtcStats.audioBitrate / 192} />
+                    <StatRow label="FPS" value={`${rtcStats.fps}`} color="purple" bar={rtcStats.fps / 30} />
+                    <StatRow label="فقدان الحزم" value={`${rtcStats.packetLoss}%`} color={rtcStats.packetLoss > 5 ? 'red' : 'green'} bar={rtcStats.packetLoss / 100} />
+                    <StatRow label="تأخير (RTT)" value={`${rtcStats.rtt} ms`} color={rtcStats.rtt > 200 ? 'yellow' : 'green'} bar={Math.min(rtcStats.rtt / 500, 1)} />
+                    <div className="bg-gray-800/60 rounded-lg p-2.5 mt-3">
+                      <p className="text-xs text-gray-500 font-medium mb-2">المنصة</p>
+                      <p className="text-sm text-white">{PLATFORM_LABELS[settings.platform]}</p>
+                      <p className="text-xs text-gray-600 mt-0.5 truncate">{settings.whipEndpoint || '—'}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+                    <I.Chart s={32} />
+                    <p className="text-gray-500 text-sm">الإحصائيات تظهر خلال البث</p>
+                    {!settings.whipEndpoint && (
+                      <button onClick={() => setShowSettings(true)}
+                        className="text-xs text-cyan-400 underline underline-offset-2">اضبط إعدادات البث</button>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div><label className="text-[9px] text-gray-500">X%</label><input type="range" min="0" max="100" value={t.x} onChange={e => updateTextOverlay(t.id, 'x', +e.target.value)} className="w-full h-4" /></div>
-                <div><label className="text-[9px] text-gray-500">Y%</label><input type="range" min="0" max="100" value={t.y} onChange={e => updateTextOverlay(t.id, 'y', +e.target.value)} className="w-full h-4" /></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </FloatingPanel>
+            )}
 
-      {/* === الشعارات === */}
-      <FloatingPanel title="الشعارات" icon={<Icons.Image />} defaultPos={{ x: 10, y: 480 }} minimized={!panels.logos} onToggle={() => togglePanel('logos')} width={290}>
-        <div className="space-y-2">
-          <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-          <button onClick={() => logoInputRef.current?.click()} className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs py-2 rounded-lg transition flex items-center justify-center gap-1"><Icons.Image s={14} /> رفع شعار</button>
-          {logos.map(l => (
-            <div key={l.id} className="bg-gray-900/60 p-2 rounded-lg border border-gray-700">
-              <div className="flex justify-between">
-                <span className="text-xs text-gray-300">شعار</span>
-                <button onClick={() => removeLogo(l.id)} className="text-gray-500 hover:text-red-400"><Icons.Trash /></button>
+            {/* Chat tab */}
+            {rightTab === 'chat' && (
+              <div className="h-full flex flex-col">
+                {chatUrl ? (
+                  <iframe src={chatUrl} className="flex-1 w-full bg-gray-950 border-0" allow="autoplay" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center flex-1 gap-3 p-4 text-center">
+                    <I.Chat s={32} />
+                    <p className="text-gray-500 text-sm">
+                      {settings.chatPlatform === 'none'
+                        ? 'اختر منصة الشات من الإعدادات'
+                        : 'أدخل معرّف البث من الإعدادات'}
+                    </p>
+                    <button onClick={() => setShowSettings(true)}
+                      className="text-xs text-cyan-400 underline underline-offset-2">فتح الإعدادات</button>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-1.5 mt-1">
-                <div><label className="text-[9px] text-gray-500">X%</label><input type="range" min="0" max="90" value={l.x} onChange={e => updateLogo(l.id, 'x', +e.target.value)} className="w-full h-4" /></div>
-                <div><label className="text-[9px] text-gray-500">Y%</label><input type="range" min="0" max="90" value={l.y} onChange={e => updateLogo(l.id, 'y', +e.target.value)} className="w-full h-4" /></div>
+            )}
+
+            {/* Overlay tab */}
+            {rightTab === 'overlay' && (
+              <div className="p-3 space-y-4">
+                {/* Logo */}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-medium">الشعار (Logo)</p>
+                  <label className="flex items-center gap-2 cursor-pointer bg-gray-800 hover:bg-gray-700 transition rounded-lg px-3 py-2 text-sm text-gray-300 border border-gray-700 border-dashed">
+                    <I.Image s={14} />
+                    {logo ? 'تغيير الشعار' : 'رفع شعار'}
+                    <input type="file" accept="image/*" className="hidden" onChange={uploadLogo} />
+                  </label>
+                  {logo && (
+                    <div className="flex items-center gap-2">
+                      <img src={logo} className="w-10 h-10 rounded object-contain bg-gray-800" alt="logo" />
+                      <button onClick={() => setLogo(null)} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                        <I.Trash /> إزالة
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-800" />
+
+                {/* Text overlays */}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-medium">نص مباشر</p>
+                  <input value={newText} onChange={e => setNewText(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addText()}
+                    placeholder="نص يظهر على البث..."
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500 transition" />
+                  <div className="flex gap-2 items-center">
+                    <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)}
+                      className="w-8 h-8 rounded border border-gray-700 bg-gray-800 cursor-pointer p-0.5" />
+                    <input type="range" min={14} max={72} value={textSize} onChange={e => setTextSize(+e.target.value)}
+                      className="flex-1 accent-cyan-500" />
+                    <span className="text-xs text-gray-500 w-8">{textSize}px</span>
+                    <button onClick={addText}
+                      className="p-2 bg-cyan-600 rounded-lg hover:bg-cyan-500 transition text-white">
+                      <I.Plus />
+                    </button>
+                  </div>
+                  {texts.map(t => (
+                    <div key={t.id} className="flex items-center gap-2 bg-gray-800/60 rounded px-2 py-1">
+                      <span className="flex-1 text-xs truncate" style={{ color: t.color }}>{t.text}</span>
+                      <button onClick={() => setTexts(ts => ts.filter(x => x.id !== t.id))} className="text-gray-600 hover:text-red-400">
+                        <I.Trash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-gray-800" />
+
+                {/* Hide regions */}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-medium">إخفاء منطقة</p>
+                  <div className="flex gap-1.5">
+                    {(['smart', 'blur', 'black'] as const).map(m => (
+                      <button key={m} onClick={() => setHideMode(m)}
+                        className={`flex-1 py-1.5 text-xs rounded-lg transition ${hideMode === m ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+                        {m === 'smart' ? 'ذكي' : m === 'blur' ? 'ضبابي' : 'أسود'}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setDrawingHide(d => !d)}
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${drawingHide ? 'bg-yellow-600 text-white animate-pulse' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'}`}>
+                    <I.Shield s={14} />
+                    {drawingHide ? 'ارسم المنطقة على الشاشة' : 'إخفاء منطقة على الشاشة'}
+                  </button>
+                  {hideRegions.map(r => (
+                    <div key={r.id} className="flex items-center gap-2 bg-gray-800/60 rounded px-2 py-1">
+                      <span className="flex-1 text-xs text-gray-400">{r.mode} — {Math.round(r.w * 100)}%×{Math.round(r.h * 100)}%</span>
+                      <button onClick={() => setHideRegions(rs => rs.filter(x => x.id !== r.id))} className="text-gray-600 hover:text-red-400">
+                        <I.Trash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </FloatingPanel>
+            )}
+          </div>
+        </aside>
+      </div>
 
-      {/* === الشات === */}
-      <FloatingPanel title={`الشات • ${analytics.chatMessages} 💬`} icon={<Icons.Chat />} defaultPos={{ x: 10, y: 580 }} minimized={!panels.chat} onToggle={() => togglePanel('chat')} width={290}>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto text-xs">
-          {chat.map(msg => (
-            <div key={msg.id} className="bg-gray-900/50 p-2 rounded-lg border border-gray-800">
-              <span className="font-bold text-cyan-400">{msg.user}:</span> <span className="text-gray-300">{msg.text}</span>
-            </div>
-          ))}
-          {chat.length === 0 && <p className="text-gray-500 text-center py-4">في انتظار الرسائل...</p>}
-        </div>
-      </FloatingPanel>
+      {/* Settings modal */}
+      <AnimatePresence>
+        {showSettings && <SettingsModal onClose={handleSettingsClose} />}
+      </AnimatePresence>
+    </div>
+  );
+}
 
-      {/* === أزرار التحكم السفلية === */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <div className="flex gap-1.5 items-center flex-wrap justify-center max-w-full px-2">
-          {[
-            { key: 'mask' as PanelKey, icon: '🛡️', label: 'إخفاء' },
-            { key: 'logos' as PanelKey, icon: '🖼️', label: 'شعار' },
-            { key: 'text' as PanelKey, icon: '✏️', label: 'نص' },
-            { key: 'record' as PanelKey, icon: isRecording ? '🔴' : '⏺️', label: 'تسجيل' },
-            { key: 'whip' as PanelKey, icon: '🔗', label: 'WHIP' },
-            { key: 'remote' as PanelKey, icon: '📱', label: 'عن بعد' },
-            { key: 'analytics' as PanelKey, icon: '📈', label: 'تحليلات' },
-            { key: 'transition' as PanelKey, icon: '🎬', label: 'انتقال' },
-            { key: 'audio' as PanelKey, icon: '🎙️', label: 'صوت' },
-            { key: 'chat' as PanelKey, icon: '💬', label: 'شات' },
-          ].map(btn => (
-            <button key={btn.key} onClick={() => togglePanel(btn.key)}
-              className={`px-2.5 py-1.5 rounded-full text-[10px] font-medium transition whitespace-nowrap ${panels[btn.key] ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700'}`}>
-              {btn.icon} {btn.label}
-            </button>
-          ))}
-          <button onClick={handleStop} className="ml-2 bg-red-600 hover:bg-red-500 px-4 py-1.5 rounded-full text-white text-[10px] font-bold shadow-lg shadow-red-500/40 transition">⏹ إيقاف</button>
-        </div>
+// ─── Camera PiP ───────────────────────────────────────────────────────────────
+function CameraPreview({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (ref.current) { ref.current.srcObject = stream; ref.current.play(); }
+  }, [stream]);
+  return (
+    <div className="absolute bottom-4 right-4 w-32 h-24 rounded-xl overflow-hidden border-2 border-gray-700 shadow-xl bg-black">
+      <video ref={ref} autoPlay muted playsInline className="w-full h-full object-cover" />
+    </div>
+  );
+}
+
+// ─── Stat Row ─────────────────────────────────────────────────────────────────
+function StatRow({ label, value, color, bar }: { label: string; value: string; color: string; bar: number }) {
+  const colors: Record<string, string> = {
+    cyan: 'bg-cyan-500', green: 'bg-green-500', purple: 'bg-purple-500',
+    red: 'bg-red-500', yellow: 'bg-yellow-500',
+  };
+  return (
+    <div className="bg-gray-800/50 rounded-lg p-2.5">
+      <div className="flex justify-between text-xs mb-1.5">
+        <span className="text-gray-400">{label}</span>
+        <span className="text-white font-mono font-medium">{value}</span>
+      </div>
+      <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${colors[color] || 'bg-cyan-500'}`}
+          style={{ width: `${Math.min(Math.max(bar * 100, 0), 100)}%` }} />
       </div>
     </div>
   );
-};
+}
 
-// ========== الإعدادات ==========
-const Settings = () => (
-  <div className="p-4 pb-24 space-y-6">
-    <h2 className="text-2xl font-bold text-white">الإعدادات المتقدمة</h2>
-    {[
-      { title: '🎬 التسجيل المحلي', desc: 'يتم تسجيل البث باستخدام MediaRecorder API بصيغة WebM. يمكن تحميله مباشرة بعد انتهاء البث.' },
-      { title: '🔗 معيار WHIP/WHEP', desc: 'WHIP (WebRTC-HTTP Ingestion Protocol) هو معيار جديد للبث عبر WebRTC. يدعمه LiveKit, Cloudflare Stream.' },
-      { title: '📱 التحكم عن بعد', desc: 'أنشئ كود اتصال من التطبيق الرئيسي، ثم أدخله في جهاز ثانٍ للتحكم في: كتم الصوت، بدء/إيقاف التسجيل، تغيير المشهد.' },
-      { title: '📊 التحليلات', desc: 'بيانات حية عن: عدد المشاهدين، الذروة، وقت المشاهدة، التفاعل. يتم تحديثها كل 3 ثوانٍ.' },
-      { title: '🎭 القوالب الجاهزة', desc: 'اختر قالباً جاهزاً قبل البث: مباراة، لعبة، درس، مقابلة. يمكن التعديل أثناء البث.' },
-      { title: '🎬 المؤثرات الانتقالية', desc: '6 تأثيرات متاحة: تلاشي، انزلاق، تكبير، ضبابي، قلب، مسح.' },
-    ].map((section, i) => (
-      <div key={i} className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-2">
-        <h3 className="text-cyan-400 font-bold text-sm">{section.title}</h3>
-        <p className="text-gray-400 text-xs leading-relaxed">{section.desc}</p>
-      </div>
-    ))}
-  </div>
-);
-
-// ========== التطبيق الرئيسي ==========
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState('home');
-  const [streamConfig, setStreamConfig] = useState<StreamConfig | null>(null);
-
-  useEffect(() => { if (localStorage.getItem('user')) setIsAuthenticated(true); }, []);
-
-  if (!isAuthenticated) return <AuthScreen onLogin={() => { localStorage.setItem('user', '1'); setIsAuthenticated(true); }} />;
-
-  const tabs = [
-    { id: 'home', Icon: Icons.Home, label: 'الرئيسية' },
-    { id: 'stream', Icon: Icons.Broadcast, label: 'بث مباشر' },
-    { id: 'settings', Icon: Icons.Settings, label: 'إعدادات' },
-  ];
-
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false);
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-950 text-white font-sans max-w-lg mx-auto relative overflow-hidden flex flex-col h-screen border-x border-gray-800 shadow-2xl">
-      <header className="bg-gray-900/80 backdrop-blur-md px-4 py-3 flex items-center justify-between z-20 border-b border-gray-800 flex-shrink-0">
-        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-fuchsia-500">StreamSphere Pro</h1>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-fuchsia-500 flex items-center justify-center text-sm font-bold">م</div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto bg-gray-950 min-h-0">
-        <AnimatePresence mode="wait">
-          <motion.div key={activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="h-full">
-            {activeTab === 'home' && <Dashboard onStart={(c) => { setStreamConfig(c); setActiveTab('stream'); }} />}
-            {activeTab === 'stream' && <ProStreamEngine config={streamConfig} onEnd={() => { setStreamConfig(null); setActiveTab('home'); }} />}
-            {activeTab === 'settings' && <Settings />}
-          </motion.div>
-        </AnimatePresence>
-      </main>
-
-      <nav className="bg-gray-900/90 backdrop-blur-md border-t border-gray-800 flex justify-around items-center px-2 py-2 z-50 flex-shrink-0">
-        {tabs.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === tab.id ? 'text-cyan-400 -translate-y-1' : 'text-gray-500 hover:text-gray-300'}`}>
-            <div className={`p-1 rounded-lg transition-all ${activeTab === tab.id ? 'bg-gray-800' : ''}`}><tab.Icon /></div>
-            <span className="text-[10px] font-medium mt-1">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
+    <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      {show && (
+        <div className="absolute left-12 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap z-50 border border-gray-700 shadow-lg pointer-events-none">
+          {label}
+        </div>
+      )}
     </div>
   );
 }
