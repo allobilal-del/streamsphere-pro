@@ -474,9 +474,10 @@ export default function App() {
               prevAudioBytes.current = bytes;
             }
           }
-          if (r.type === 'remote-inbound-rtp' && (r as RTCRemoteInboundRtpStreamStats).kind === 'video') {
-            loss = Math.round(((r as RTCRemoteInboundRtpStreamStats & { fractionLost?: number }).fractionLost ?? 0) * 100);
-            rtt = Math.round(((r as RTCRemoteInboundRtpStreamStats).roundTripTime ?? 0) * 1000);
+          if (r.type === 'remote-inbound-rtp' && (r as RTCInboundRtpStreamStats).kind === 'video') {
+            const ri = r as RTCInboundRtpStreamStats & { fractionLost?: number; roundTripTime?: number };
+            loss = Math.round((ri.fractionLost ?? 0) * 100);
+            rtt = Math.round((ri.roundTripTime ?? 0) * 1000);
           }
         });
 
